@@ -7,32 +7,41 @@
 
 <style>
     body {
-        background: #f5f5f5;
+        background: #111;
         margin: 0;
         padding: 40px 10px;
         font-family: Arial, sans-serif;
         text-align: center;
+        color: white;
     }
     .logo {
         font-size: 42px;
         font-weight: bold;
         color: #1a73e8;
-        margin-bottom: 25px;
+        margin-bottom: 10px;
+    }
+    .credit {
+        font-size: 13px;
+        margin-bottom: 20px;
+        opacity: 0.6;
     }
     .search-box {
         width: 95%;
         max-width: 600px;
         margin: 0 auto;
-        background: white;
+        background: #222;
         padding: 12px 20px;
         border-radius: 40px;
-        box-shadow: 0px 3px 10px rgba(0,0,0,0.15);
+        box-shadow: 0px 3px 10px rgba(255,255,255,0.1);
+        color: white;
     }
     .search-box input {
         width: 100%;
         border: none;
         outline: none;
         font-size: 18px;
+        background: transparent;
+        color: white;
     }
     #results {
         margin-top: 25px;
@@ -41,15 +50,15 @@
         margin-right: auto;
     }
     .item {
-        background: white;
-        padding: 10px 14px;
+        background: #222;
+        padding: 12px 14px;
         border-radius: 10px;
         font-size: 18px;
         margin-bottom: 10px;
         display: flex;
         justify-content: space-between;
         align-items: center;
-        box-shadow: 0px 2px 6px rgba(0,0,0,0.1);
+        box-shadow: 0px 2px 6px rgba(255,255,255,0.1);
     }
     .copy-btn {
         padding: 6px 14px;
@@ -60,15 +69,13 @@
         border-radius: 6px;
         font-size: 14px;
     }
-    .copy-btn:active {
-        transform: scale(0.96);
-    }
 </style>
 </head>
 
 <body>
 
 <div class="logo">Search Word</div>
+<div class="credit">@dylphiiee</div>
 
 <div class="search-box">
     <input id="search" type="text" placeholder="Cari kata..." disabled>
@@ -79,35 +86,67 @@
 <script>
 let words = [];
 
-// === LOAD words.json ===
+// Load JSON
 fetch("words.json")
     .then(r => r.json())
     .then(data => {
-        words = data.words;  
+        words = data.words;
         document.getElementById("search").disabled = false;
     })
-    .catch(err => {
-        // error di-silent (tidak ada alert)
-    });
+    .catch(err => {});
 
-// === SEARCH FUNCTION ===
+// Search function
 function searchWords(query, limit = 200) {
     query = query.toLowerCase();
-
     let starts = [];
     let contains = [];
 
     for (let w of words) {
         let lw = w.toLowerCase();
-
         if (lw.startsWith(query)) starts.push(w);
         else if (lw.includes(query)) contains.push(w);
-
         if (starts.length + contains.length >= limit) break;
     }
 
     return [...starts, ...contains];
 }
+
+// Copy function
+function copyToClipboard(text) {
+    navigator.clipboard.writeText(text);
+}
+
+// Update list
+document.getElementById("search").addEventListener("input", function() {
+    const query = this.value.trim();
+    const box = document.getElementById("results");
+    box.innerHTML = "";
+
+    if (!query) return;
+
+    const result = searchWords(query);
+
+    if (result.length === 0) {
+        box.innerHTML = `<div class="item">Tidak ada hasil</div>`;
+        return;
+    }
+
+    result.forEach(word => {
+        const row = document.createElement("div");
+        row.className = "item";
+
+        row.innerHTML = `
+            <span>${word}</span>
+            <button class="copy-btn" onclick="copyToClipboard('${word}')">Copy</button>
+        `;
+
+        box.appendChild(row);
+    });
+});
+</script>
+
+</body>
+</html>}
 
 // === COPY TO CLIPBOARD ===
 function copyToClipboard(text) {
