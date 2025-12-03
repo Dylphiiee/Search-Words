@@ -1,21 +1,18 @@
-local RAW_URL = "https://raw.githubusercontent.com/username/repo/main/words.txt"
+local RAW_JSON_URL = "https://raw.githubusercontent.com/username/repo/main/words.json"
 
 local Http = game:GetService("HttpService")
 local words = {}
 
-local function loadWords()
-    local ok, result = pcall(function()
-        return Http:GetAsync(RAW_URL)
-    end)
-    if ok then
-        words = {}
-        for line in string.gmatch(result, "[^\r\n]+") do
-            table.insert(words, line)
-        end
-    end
-end
+local ok, result = pcall(function()
+    return Http:GetAsync(RAW_JSON_URL)
+end)
 
-loadWords()
+if ok then
+    local data = Http:JSONDecode(result)
+    words = data.words or {}
+else
+    warn("Gagal load JSON:", result)
+end
 
 local function clean(q)
     return (q or ""):lower():gsub("%s+", "")
@@ -25,7 +22,7 @@ local function findWords(q)
     local key = clean(q)
     local result = {}
     if key == "" then return result end
-    for _,w in ipairs(words) do
+    for _, w in ipairs(words) do
         if w:lower():sub(1,#key) == key then
             table.insert(result, w)
             if #result >= 200 then break end
@@ -114,7 +111,6 @@ layout.Padding = UDim.new(0,6)
 local function updateList()
     scroll:ClearAllChildren()
     local results = findWords(search.Text)
-
     for _,word in ipairs(results) do
         local item = Instance.new("Frame")
         item.Size = UDim2.new(1,0,0,40)
@@ -139,13 +135,11 @@ local function updateList()
         copy.TextSize = 20
         copy.Font = Enum.Font.GothamBold
         copy.BackgroundTransparency = 1
-
         copy.MouseButton1Click:Connect(function()
             search.Text = word
         end)
     end
-
-    scroll.CanvasSize = UDim2.new(0,0,0,#results * 46)
+    scroll.CanvasSize = UDim2.new(0,0,0,#results*46)
 end
 
 search:GetPropertyChangedSignal("Text"):Connect(updateList)
@@ -155,7 +149,7 @@ local dragStart, startPos
 local UIS = game:GetService("UserInputService")
 
 header.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
         dragging = true
         dragStart = input.Position
         startPos = panel.Position
@@ -163,15 +157,15 @@ header.InputBegan:Connect(function(input)
 end)
 
 header.InputEnded:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
         dragging = false
     end
 end)
 
 UIS.InputChanged:Connect(function(input)
-    if dragging then
+    if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
         local delta = input.Position - dragStart
-        panel.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+        panel.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset+delta.X, startPos.Y.Scale, startPos.Y.Offset+delta.Y)
     end
 end)
 
@@ -179,12 +173,10 @@ miniBtn.MouseButton1Click:Connect(function()
     panel.Visible = false
     icon.Visible = true
 end)
-
 icon.MouseButton1Click:Connect(function()
     panel.Visible = true
     icon.Visible = false
 end)
-
 closeBtn.MouseButton1Click:Connect(function()
     panel:Destroy()
     icon:Destroy()
