@@ -1,4 +1,4 @@
-local RAW_JSON_URL = "https://raw.githubusercontent.com/username/repo/main/words.json"
+local RAW_JSON_URL = "https://raw.githubusercontent.com/Dylphiiee/Search-Words/refs/heads/main/words.json"
 
 local Http = game:GetService("HttpService")
 local words = {}
