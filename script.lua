@@ -1,34 +1,44 @@
--- ======= Services =======
-local Players = game:GetService("Players")
-local Http = game:GetService("HttpService")
-local UIS = game:GetService("UserInputService")
-local player = Players.LocalPlayer
+-- ======= Load Words from words.txt =======
+local url = "https://raw.githubusercontent.com/Dylphiiee/Search-Words/refs/heads/main/words.txt"
 
--- ======= Load Words from JSON =======
+if not isfile("words.txt") then
+    local res = request({Url = url, Method = "GET"})
+    if res and res.Body then
+        writefile("words.txt", res.Body)
+    end
+end
+
 local Words = {}
-pcall(function()
-    local res = Http:GetAsync("https://raw.githubusercontent.com/Dylphiiee/Search-Words/refs/heads/main/words.json")
-    local data = Http:JSONDecode(res)
-    Words = data.words or {}
-    print("Words loaded:", #Words)
-end)
+if isfile("words.txt") then
+    local content = readfile("words.txt")
+    for w in content:gmatch("[^\r\n]+") do
+        table.insert(Words, w)
+    end
+end
 
--- ======= Search Function =======
-local function searchWords(query, limit)
-    query = query:lower():gsub("^%s*(.-)%s*$","%1")
-    local result = {}
+-- ======= Suggest Words =======
+local function SuggestWords(query, count)
+    query = query:lower()
+    local possible = {}
     for _, w in ipairs(Words) do
-        local word = w:lower():gsub("^%s*(.-)%s*$","%1")
-        if word:sub(1,#query) == query then
-            table.insert(result, w)
-            if limit and #result >= limit then break end
+        if w:sub(1,#query):lower() == query then
+            table.insert(possible, w)
         end
     end
-    return result
+    local results = {}
+    local used = {}
+    while #results < count and #possible > 0 do
+        local r = math.random(1, #possible)
+        if not used[r] then
+            table.insert(results, possible[r])
+            used[r] = true
+        end
+    end
+    return results
 end
 
 -- ======= GUI =======
-local gui = Instance.new("ScreenGui", player:WaitForChild("PlayerGui"))
+local gui = Instance.new("ScreenGui", game.CoreGui)
 gui.Name = "SearchWordsGUI"
 
 -- Panel
@@ -110,14 +120,14 @@ local layout = Instance.new("UIListLayout", list)
 layout.Padding = UDim.new(0,2)
 layout.SortOrder = Enum.SortOrder.LayoutOrder
 
--- ======= Update Results =======
+-- Update results
 local function UpdateResults()
     for _, c in ipairs(list:GetChildren()) do
         if c:IsA("TextButton") then c:Destroy() end
     end
-    local query = search.Text:lower():gsub("^%s*(.-)%s*$","%1")
-    if #query < 1 then return end
-    local results = searchWords(query,200)
+    local text = search.Text:lower():gsub("^%s*(.-)%s*$","%1")
+    if #text < 1 then return end
+    local results = SuggestWords(text, 200)
     if #results == 0 then
         local none = Instance.new("TextLabel", list)
         none.Size = UDim2.new(1,0,0,25)
@@ -148,7 +158,7 @@ end
 
 search:GetPropertyChangedSignal("Text"):Connect(UpdateResults)
 
--- ======= Dragging =======
+-- Dragging
 local dragging, dragStart, startPos
 header.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
@@ -171,7 +181,7 @@ header.InputEnded:Connect(function(input)
     end
 end)
 
--- ======= Minimize / Maximize / Close =======
+-- Minimize / Maximize / Close
 miniBtn.MouseButton1Click:Connect(function()
     panel.Visible = false
     icon.Visible = true
