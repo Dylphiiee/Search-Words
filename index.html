@@ -1,89 +1,58 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="id">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Search Words</title>
-    <link rel="stylesheet" href="style.css">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Search Word</title>
+<link rel="stylesheet" href="style.css">
 </head>
+
 <body>
-    <!-- Toggle Mode -->
-    <div class="toggle-container">
-        <button id="toggleMode">🌙</button>
-    </div>
 
-    <div class="container">
-        <h1 class="title">Search Words</h1>
+<!-- Toggle Mode -->
+<button id="toggleMode" class="toggle-mode">🌙</button>
 
-        <input type="text" id="searchInput" placeholder="Search words..." autocomplete="off">
+<div class="logo">Search Word</div>
 
-        <div id="results"></div>
-    </div>
+<div class="search-box">
+    <input id="search" type="text" placeholder="Cari kata..." disabled>
+</div>
+
+<div id="results"></div>
 
 <script>
-    let darkMode = false;
+let words = [];
 
-    // Toggle Light/Dark Mode
-    document.getElementById("toggleMode").addEventListener("click", () => {
-        darkMode = !darkMode;
-        document.body.classList.toggle("dark");
-        document.getElementById("toggleMode").textContent = darkMode ? "☀️" : "🌙";
+// === LOAD words.json ===
+fetch("words.json")
+    .then(r => r.json())
+    .then(data => {
+        words = data.words; 
+        document.getElementById("search").disabled = false;
     });
 
-    // Load words.json
-    let wordsList = [];
+// === SEARCH FUNCTION ===
+function searchWords(query, limit = 200) {
+    query = query.toLowerCase();
 
-    fetch("words.json")
-        .then(res => res.json())
-        .then(data => {
-            wordsList = data.words;
-        });
+    let starts = [];
+    let contains = [];
 
-    // Search Function
-    const input = document.getElementById("searchInput");
-    const resultsBox = document.getElementById("results");
+    for (let w of words) {
+        let lw = w.toLowerCase();
 
-    input.addEventListener("input", () => {
-        const query = input.value.toLowerCase();
-        resultsBox.innerHTML = "";
+        if (lw.startsWith(query)) starts.push(w);
+        else if (lw.includes(query)) contains.push(w);
 
-        if (query.length === 0) return;
+        if (starts.length + contains.length >= limit) break;
+    }
 
-        const filtered = wordsList.filter(word => word.toLowerCase().startsWith(query));
-
-        filtered.forEach(word => {
-            const item = document.createElement("div");
-            item.className = "result-item";
-
-            item.innerHTML = `
-                <button class="word-btn">${word}</button>
-                <button class="copy-btn" data-word="${word}">Salin</button>
-            `;
-
-            resultsBox.appendChild(item);
-        });
-
-        // Copy function
-        document.querySelectorAll(".copy-btn").forEach(btn => {
-            btn.addEventListener("click", () => {
-                navigator.clipboard.writeText(btn.dataset.word);
-                btn.textContent = "Tersalin!";
-                setTimeout(() => btn.textContent = "Salin", 1000);
-            });
-        });
-    });
-</script>
-
-</body>
-</html>
     return [...starts, ...contains];
 }
 
 // === COPY TO CLIPBOARD ===
 function copyToClipboard(text) {
-    navigator.clipboard.writeText(text).then(() => {
-        alert("Copied: " + text);
-    });
+    navigator.clipboard.writeText(text);
 }
 
 // === UPDATE RESULTS ===
@@ -97,7 +66,7 @@ document.getElementById("search").addEventListener("input", function() {
     const result = searchWords(query);
 
     if (result.length === 0) {
-        box.innerHTML = `<div class="item" style="color:#777">Tidak ada hasil</div>`;
+        box.innerHTML = `<div class="item no-result">Tidak ada hasil</div>`;
         return;
     }
 
@@ -108,6 +77,28 @@ document.getElementById("search").addEventListener("input", function() {
         const text = document.createElement("span");
         text.textContent = word;
 
+        const button = document.createElement("button");
+        button.className = "copy-btn";
+        button.textContent = "Copy";
+        button.onclick = () => copyToClipboard(word);
+
+        row.appendChild(text);
+        row.appendChild(button);
+        box.appendChild(row);
+    });
+});
+
+// === TOGGLE DARK/LIGHT MODE ===
+const toggle = document.getElementById("toggleMode");
+
+toggle.addEventListener("click", () => {
+    document.body.classList.toggle("dark");
+    toggle.textContent = document.body.classList.contains("dark") ? "☀️" : "🌙";
+});
+</script>
+
+</body>
+</html>
         const button = document.createElement("button");
         button.className = "copy-btn";
         button.textContent = "Copy";
