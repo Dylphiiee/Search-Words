@@ -4,61 +4,60 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Search Word</title>
+
 <style>
     body {
-        margin: 0;
         background: #f5f5f5;
-        font-family: Arial, sans-serif;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
+        margin: 0;
         padding: 40px 10px;
+        font-family: Arial, sans-serif;
+        text-align: center;
     }
     .logo {
-        font-size: 46px;
+        font-size: 42px;
         font-weight: bold;
-        margin-bottom: 20px;
         color: #1a73e8;
+        margin-bottom: 25px;
     }
     .search-box {
-        width: 100%;
+        width: 95%;
         max-width: 600px;
+        margin: 0 auto;
         background: white;
-        padding: 12px 18px;
+        padding: 12px 20px;
         border-radius: 40px;
         box-shadow: 0px 3px 10px rgba(0,0,0,0.15);
-        display: flex;
-        align-items: center;
     }
     .search-box input {
-        flex: 1;
+        width: 100%;
         border: none;
         outline: none;
         font-size: 18px;
     }
     #results {
-        margin-top: 20px;
-        width: 100%;
+        margin-top: 25px;
         max-width: 600px;
+        margin-left: auto;
+        margin-right: auto;
     }
     .item {
         background: white;
         padding: 10px 14px;
+        border-radius: 10px;
+        font-size: 18px;
         margin-bottom: 10px;
-        border-radius: 8px;
         display: flex;
         justify-content: space-between;
         align-items: center;
-        font-size: 18px;
         box-shadow: 0px 2px 6px rgba(0,0,0,0.1);
     }
     .copy-btn {
         padding: 6px 14px;
-        border: none;
         background: #1a73e8;
         color: white;
-        border-radius: 6px;
+        border: none;
         cursor: pointer;
+        border-radius: 6px;
         font-size: 14px;
     }
     .copy-btn:active {
@@ -66,6 +65,7 @@
     }
 </style>
 </head>
+
 <body>
 
 <div class="logo">Search Word</div>
@@ -79,28 +79,31 @@
 <script>
 let words = [];
 
-// FETCH words.txt dari server
-fetch("words.txt")
-    .then(r => r.text())
-    .then(t => {
-        words = t.split(/\r?\n/).map(w => w.trim()).filter(Boolean);
+// === LOAD words.json ===
+fetch("words.json")
+    .then(r => r.json())
+    .then(data => {
+        words = data.words; // sesuai format JSON kamu
         document.getElementById("search").disabled = false;
-        console.log("Loaded", words.length, "words.");
+        console.log("Loaded", words.length, "words from JSON");
     })
     .catch(err => {
-        alert("Gagal memuat words.txt — pastikan file ada di server yang sama!");
+        alert("Gagal memuat words.json. Pastikan file berada di server yang sama.");
+        console.error(err);
     });
 
-// FUNGSI PENCARIAN
-function searchWords(q, limit = 200) {
-    q = q.toLowerCase();
+// === SEARCH FUNCTION ===
+function searchWords(query, limit = 200) {
+    query = query.toLowerCase();
+
     let starts = [];
     let contains = [];
 
     for (let w of words) {
         let lw = w.toLowerCase();
-        if (lw.startsWith(q)) starts.push(w);
-        else if (lw.includes(q)) contains.push(w);
+
+        if (lw.startsWith(query)) starts.push(w);
+        else if (lw.includes(query)) contains.push(w);
 
         if (starts.length + contains.length >= limit) break;
     }
@@ -108,22 +111,22 @@ function searchWords(q, limit = 200) {
     return [...starts, ...contains];
 }
 
-// COPY FUNCTION
-function copyText(text) {
+// === COPY TO CLIPBOARD ===
+function copyToClipboard(text) {
     navigator.clipboard.writeText(text).then(() => {
         alert("Copied: " + text);
     });
 }
 
-// UPDATE HASIL
+// === UPDATE RESULTS ===
 document.getElementById("search").addEventListener("input", function() {
-    const q = this.value.trim();
+    const query = this.value.trim();
     const box = document.getElementById("results");
     box.innerHTML = "";
 
-    if (!q) return;
+    if (!query) return;
 
-    const result = searchWords(q);
+    const result = searchWords(query);
 
     if (result.length === 0) {
         box.innerHTML = `<div class="item" style="color:#777">Tidak ada hasil</div>`;
@@ -131,364 +134,24 @@ document.getElementById("search").addEventListener("input", function() {
     }
 
     result.forEach(word => {
-        let div = document.createElement("div");
-        div.className = "item";
+        const row = document.createElement("div");
+        row.className = "item";
 
-        let text = document.createElement("span");
+        const text = document.createElement("span");
         text.textContent = word;
 
-        let btn = document.createElement("button");
-        btn.className = "copy-btn";
-        btn.textContent = "Copy";
-        btn.onclick = () => copyText(word);
+        const button = document.createElement("button");
+        button.className = "copy-btn";
+        button.textContent = "Copy";
+        button.onclick = () => copyToClipboard(word);
 
-        div.appendChild(text);
-        div.appendChild(btn);
+        row.appendChild(text);
+        row.appendChild(button);
 
-        box.appendChild(div);
+        box.appendChild(row);
     });
 });
 </script>
 
-</body>
-</html>        return;
-    }
-
-    result.forEach(w => {
-        let div = document.createElement("div");
-        div.className = "item";
-        div.textContent = w;
-        resBox.appendChild(div);
-    });
-});
-</script>
-
-</body>
-</html><!doctype html>
-<html lang="id">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Search Word</title>
-<style>
-    body {
-        margin: 0;
-        background: #f8f9fa;
-        font-family: Arial, sans-serif;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        padding: 40px 10px;
-    }
-    .logo {
-        font-size: 54px;
-        font-weight: bold;
-        margin-bottom: 20px;
-        color: #1a73e8;
-    }
-    .search-box {
-        width: 100%;
-        max-width: 600px;
-        background: white;
-        padding: 12px 18px;
-        border-radius: 40px;
-        box-shadow: 0px 3px 12px rgba(0,0,0,0.15);
-        display: flex;
-        align-items: center;
-    }
-    .search-box input {
-        flex: 1;
-        border: none;
-        outline: none;
-        font-size: 18px;
-    }
-    #results {
-        margin-top: 20px;
-        width: 100%;
-        max-width: 600px;
-    }
-    .item {
-        background: white;
-        padding: 12px 16px;
-        margin-bottom: 8px;
-        border-radius: 10px;
-        font-size: 18px;
-        box-shadow: 0px 2px 6px rgba(0,0,0,0.1);
-    }
-</style>
-</head>
-<body>
-
-<div class="logo">Search Word</div>
-
-<div class="search-box">
-    <input id="search" type="text" placeholder="Cari kata..." disabled>
-</div>
-
-<div id="results"></div>
-
-<script>
-// DATA KATA AKAN DITARIK DARI SERVER
-let words = [];
-
-// AMBIL words.txt
-fetch("words.txt")
-    .then(r => r.text())
-    .then(t => {
-        words = t.split(/\r?\n/).map(s => s.trim()).filter(Boolean);
-        document.getElementById("search").disabled = false;
-        console.log("Loaded", words.length, "words");
-    })
-    .catch(err => {
-        alert("Gagal memuat words.txt. Pastikan file berada di server yang sama.");
-        console.error(err);
-    });
-
-// FUNGSI PENCARIAN
-function searchWords(q, limit = 200) {
-    q = q.toLowerCase();
-    let starts = [];
-    let contains = [];
-
-    for (let w of words) {
-        let lw = w.toLowerCase();
-        if (lw.startsWith(q)) starts.push(w);
-        else if (lw.includes(q)) contains.push(w);
-
-        if (starts.length + contains.length >= limit) break;
-    }
-
-    return [...starts, ...contains];
-}
-
-// UPDATE UI HASIL
-document.getElementById("search").addEventListener("input", function () {
-    let q = this.value.trim();
-    let resBox = document.getElementById("results");
-    resBox.innerHTML = "";
-
-    if (!q) return;
-
-    let result = searchWords(q);
-
-    if (result.length === 0) {
-        resBox.innerHTML = `<div class="item" style="color:#777">No result</div>`;
-        return;
-    }
-
-    result.forEach(w => {
-        let div = document.createElement("div");
-        div.className = "item";
-        div.textContent = w;
-        resBox.appendChild(div);
-    });
-});
-</script>
-
-</body>
-</html>    @media (max-width:420px) {
-      .logo { font-size:36px; }
-      input.search { font-size:18px; }
-    }
-  </style>
-</head>
-<body>
-  <div class="page">
-    <div class="logo">
-      <div class="title-main">Search</div>
-      <div class="title-sub">word</div>
-    </div>
-
-    <div class="search-wrap" role="search" aria-label="Search words">
-      <!-- Magnifier icon -->
-      <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0016 9.5 6.5 6.5 0 109.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zM10 14a4 4 0 110-8 4 4 0 010 8z"/></svg>
-
-      <input id="q" class="search" type="search" placeholder="Cari kata..." autocomplete="off" aria-autocomplete="list" />
-
-      <button id="clear" class="clear-btn" title="Clear" aria-label="Clear search">✕</button>
-    </div>
-
-    <div class="results" id="results">
-      <div class="meta" id="meta" hidden></div>
-      <div class="list" id="list" role="listbox" aria-label="Search results"></div>
-    </div>
-
-    <div class="hint">Tip: ketik beberapa huruf untuk menemukan kata. Gunakan panah ↑ ↓ lalu Enter untuk memilih.</div>
-  </div>
-
-  <script>
-    // ====== Config ======
-    const WORDS_FILE = 'words.txt'; // pastikan file ini tersedia di folder yang sama
-    const MAX_RESULTS = 200;
-
-    // ====== State ======
-    let words = [];
-    let filtered = [];
-    let activeIndex = -1;
-    const qEl = document.getElementById('q');
-    const listEl = document.getElementById('list');
-    const metaEl = document.getElementById('meta');
-    const clearBtn = document.getElementById('clear');
-
-    // Utility: debounce
-    function debounce(fn, ms=150) {
-      let t;
-      return (...args) => {
-        clearTimeout(t);
-        t = setTimeout(() => fn(...args), ms);
-      };
-    }
-
-    // Load words from words.txt
-    fetch(WORDS_FILE)
-      .then(r => {
-        if (!r.ok) throw new Error('Gagal memuat ' + WORDS_FILE + ' (HTTP ' + r.status + ')');
-        return r.text();
-      })
-      .then(txt => {
-        words = txt.split(/\\r?\\n/).map(s => s.trim()).filter(Boolean);
-        // optional: sort for safety (if not already sorted)
-        words.sort((a,b) => a.localeCompare(b, undefined, {sensitivity:'base'}));
-      })
-      .catch(err => {
-        console.error(err);
-        metaEl.hidden = false;
-        metaEl.textContent = 'Error: tidak bisa memuat words.txt — pastikan file ada di folder yang sama dan Anda membuka halaman via server lokal.';
-      });
-
-    // Highlight matched substring (case-insensitive)
-    function highlightMatch(word, term) {
-      if (!term) return escapeHtml(word);
-      const idx = word.toLowerCase().indexOf(term.toLowerCase());
-      if (idx === -1) return escapeHtml(word);
-      const before = escapeHtml(word.slice(0, idx));
-      const match = escapeHtml(word.slice(idx, idx + term.length));
-      const after = escapeHtml(word.slice(idx + term.length));
-      return before + '<span class="highlight">' + match + '</span>' + after;
-    }
-
-    function escapeHtml(s) {
-      return s.replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;');
-    }
-
-    // Render results
-    function renderResults(term) {
-      listEl.innerHTML = '';
-      activeIndex = -1;
-      if (!term) {
-        metaEl.hidden = true;
-        return;
-      }
-      const tLow = term.toLowerCase();
-      // Priority: startsWith first, then includes
-      const starts = [];
-      const includes = [];
-      for (let w of words) {
-        const lw = w.toLowerCase();
-        if (lw.startsWith(tLow)) starts.push(w);
-        else if (lw.includes(tLow)) includes.push(w);
-        // stop early if large enough? we combine then slice below
-      }
-      filtered = starts.concat(includes).slice(0, MAX_RESULTS);
-      // meta
-      metaEl.hidden = false;
-      metaEl.textContent = `${filtered.length} hasil${filtered.length===MAX_RESULTS? ' (maksimum ditampilkan)':''} untuk "${term}"`;
-
-      if (filtered.length === 0) {
-        listEl.innerHTML = '<div class="item" style="color:#70757a">Tidak ada hasil.</div>';
-        return;
-      }
-
-      const frag = document.createDocumentFragment();
-      filtered.forEach((w, i) => {
-        const div = document.createElement('div');
-        div.className = 'item';
-        div.setAttribute('role','option');
-        div.setAttribute('data-index', i);
-        div.innerHTML = '<div style="flex:1">' + highlightMatch(w, term) + '</div>';
-        div.addEventListener('click', () => selectItem(i));
-        div.addEventListener('mousemove', () => setActive(i));
-        frag.appendChild(div);
-      });
-      listEl.appendChild(frag);
-    }
-
-    function setActive(i) {
-      if (activeIndex === i) return;
-      const prev = listEl.querySelector('.item.active');
-      if (prev) prev.classList.remove('active');
-      const next = listEl.querySelector('.item[data-index="'+i+'"]');
-      if (next) next.classList.add('active');
-      activeIndex = i;
-    }
-
-    function selectItem(i) {
-      const w = filtered[i];
-      if (!w) return;
-      qEl.value = w;
-      renderResults(w);
-      // scroll selected into view
-      const el = listEl.querySelector('.item[data-index="'+i+'"]');
-      if (el) el.scrollIntoView({block:'nearest'});
-    }
-
-    // Keyboard navigation
-    qEl.addEventListener('keydown', (ev) => {
-      if (ev.key === 'ArrowDown') {
-        ev.preventDefault();
-        if (filtered.length === 0) return;
-        const next = (activeIndex + 1) % filtered.length;
-        setActive(next);
-        scrollActiveIntoView();
-      } else if (ev.key === 'ArrowUp') {
-        ev.preventDefault();
-        if (filtered.length === 0) return;
-        const prev = (activeIndex - 1 + filtered.length) % filtered.length;
-        setActive(prev);
-        scrollActiveIntoView();
-      } else if (ev.key === 'Enter') {
-        if (activeIndex >= 0) {
-          ev.preventDefault();
-          selectItem(activeIndex);
-        }
-      } else if (ev.key === 'Escape') {
-        qEl.value = '';
-        renderResults('');
-      }
-    });
-
-    function scrollActiveIntoView() {
-      const el = listEl.querySelector('.item.active');
-      if (el) el.scrollIntoView({block:'nearest'});
-    }
-
-    // Input handler (debounced)
-    const onInput = debounce(() => {
-      const term = qEl.value.trim();
-      renderResults(term);
-    }, 120);
-
-    qEl.addEventListener('input', onInput);
-
-    // Clear button
-    clearBtn.addEventListener('click', () => {
-      qEl.value = '';
-      qEl.focus();
-      renderResults('');
-    });
-
-    // Click outside closes result meta (keeps list for visual)
-    document.addEventListener('click', (ev) => {
-      if (!ev.target.closest('.search-wrap') && !ev.target.closest('.list')) {
-        // don't hide everything completely: just hide meta
-        metaEl.hidden = true;
-      }
-    });
-
-    // small accessibility: focus list when tabbing into it
-    listEl.addEventListener('keydown', (ev) => {
-      if (ev.key === 'Enter' && activeIndex >= 0) selectItem(activeIndex);
-    });
-  </script>
 </body>
 </html>
