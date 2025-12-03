@@ -12,29 +12,31 @@
 <!-- Toggle Mode -->
 <button id="toggleMode" class="toggle-mode">🌙</button>
 
+<!-- Logo Google Style -->
 <div class="logo">Search Word</div>
 
+<!-- Search Box -->
 <div class="search-box">
     <input id="search" type="text" placeholder="Cari kata..." disabled>
 </div>
 
+<!-- Result Container -->
 <div id="results"></div>
 
 <script>
 let words = [];
 
-// === LOAD words.json ===
+// === LOAD JSON ===
 fetch("words.json")
     .then(r => r.json())
     .then(data => {
-        words = data.words; 
+        words = data.words;
         document.getElementById("search").disabled = false;
     });
 
 // === SEARCH FUNCTION ===
 function searchWords(query, limit = 200) {
     query = query.toLowerCase();
-
     let starts = [];
     let contains = [];
 
@@ -50,12 +52,12 @@ function searchWords(query, limit = 200) {
     return [...starts, ...contains];
 }
 
-// === COPY TO CLIPBOARD ===
+// === COPY ===
 function copyToClipboard(text) {
     navigator.clipboard.writeText(text);
 }
 
-// === UPDATE RESULTS ===
+// === UPDATE UI ===
 document.getElementById("search").addEventListener("input", function() {
     const query = this.value.trim();
     const box = document.getElementById("results");
@@ -66,29 +68,27 @@ document.getElementById("search").addEventListener("input", function() {
     const result = searchWords(query);
 
     if (result.length === 0) {
-        box.innerHTML = `<div class="item no-result">Tidak ada hasil</div>`;
+        box.innerHTML = `<div class="result-item no-result">Tidak ada hasil</div>`;
         return;
     }
 
     result.forEach(word => {
-        const row = document.createElement("div");
-        row.className = "item";
+        const item = document.createElement("div");
+        item.className = "result-item";
 
-        const text = document.createElement("span");
-        text.textContent = word;
+        item.innerHTML = `
+            <span class="result-text">${word}</span>
+            <span class="copy-icon" data-copy="${word}">📋</span>
+        `;
 
-        const button = document.createElement("button");
-        button.className = "copy-btn";
-        button.textContent = "Copy";
-        button.onclick = () => copyToClipboard(word);
+        item.querySelector(".copy-icon").onclick = e =>
+            copyToClipboard(e.target.dataset.copy);
 
-        row.appendChild(text);
-        row.appendChild(button);
-        box.appendChild(row);
+        box.appendChild(item);
     });
 });
 
-// === TOGGLE DARK/LIGHT MODE ===
+// === TOGGLE DARK MODE ===
 const toggle = document.getElementById("toggleMode");
 
 toggle.addEventListener("click", () => {
@@ -98,16 +98,7 @@ toggle.addEventListener("click", () => {
 </script>
 
 </body>
-</html>
-        const button = document.createElement("button");
-        button.className = "copy-btn";
-        button.textContent = "Copy";
-        button.onclick = () => copyToClipboard(word);
-
-        row.appendChild(text);
-        row.appendChild(button);
-
-        box.appendChild(row);
+</html>        box.appendChild(row);
     });
 });
 </script>
