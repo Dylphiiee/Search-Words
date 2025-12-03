@@ -4,24 +4,14 @@ local Http = game:GetService("HttpService")
 local UIS = game:GetService("UserInputService")
 local player = Players.LocalPlayer
 
--- ======= Load Words from RAW script.lua =======
+-- ======= Load Words from JSON =======
 local Words = {}
-local success, res = pcall(function()
-    return Http:GetAsync("https://raw.githubusercontent.com/Dylphiiee/Search-Words/refs/heads/main/script.lua")
+pcall(function()
+    local res = Http:GetAsync("https://raw.githubusercontent.com/Dylphiiee/Search-Words/refs/heads/main/words.json")
+    local data = Http:JSONDecode(res)
+    Words = data.words or {}
+    print("Words loaded:", #Words)
 end)
-
-if success and res then
-    -- Eksekusi script.lua untuk mendapatkan words
-    local env = {}
-    setfenv(loadstring(res), env)()
-    if env.words then
-        Words = env.words
-    else
-        warn("Tidak menemukan variabel 'words' di script.lua")
-    end
-else
-    warn("Gagal load script.lua:", res)
-end
 
 -- ======= Search Function =======
 local function searchWords(query, limit)
@@ -194,88 +184,4 @@ end)
 
 closeBtn.MouseButton1Click:Connect(function()
     gui:Destroy()
-end)local layout = Instance.new("UIListLayout", list)
-layout.Padding = UDim.new(0,2)
-layout.SortOrder = Enum.SortOrder.LayoutOrder
-
--- Update list like HTML
-local function UpdateResults()
-    for _, c in ipairs(list:GetChildren()) do
-        if c:IsA("TextButton") then c:Destroy() end
-    end
-    local query = search.Text
-    if #query < 1 then return end
-    local results = searchWords(query,200)
-    if #results == 0 then
-        local none = Instance.new("TextLabel", list)
-        none.Size = UDim2.new(1,0,0,25)
-        none.BackgroundColor3 = Color3.fromRGB(50,50,50)
-        none.Text = "Tidak ada hasil"
-        none.TextColor3 = Color3.fromRGB(255,255,255)
-        none.Font = Enum.Font.Gotham
-        none.TextSize = 12
-        Instance.new("UICorner", none).CornerRadius = UDim.new(0,4)
-        return
-    end
-    for _, w in ipairs(results) do
-        local btn = Instance.new("TextButton", list)
-        btn.Size = UDim2.new(1,0,0,25)
-        btn.BackgroundColor3 = Color3.fromRGB(50,50,50)
-        btn.TextColor3 = Color3.fromRGB(255,255,255)
-        btn.Font = Enum.Font.Gotham
-        btn.TextSize = 12
-        btn.Text = w
-        btn.AutoButtonColor = true
-        Instance.new("UICorner", btn).CornerRadius = UDim.new(0,4)
-        btn.MouseButton1Click:Connect(function()
-            -- Copy ke textbox atau clipboard
-            search.Text = w
-            pcall(function()
-                setclipboard(w)
-            end)
-        end)
-    end
-end
-
-search:GetPropertyChangedSignal("Text"):Connect(UpdateResults)
-
--- Dragging (PC + Touch)
-local dragging, dragStart, startPos
-local UIS = game:GetService("UserInputService")
-
-header.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-        dragging = true
-        dragStart = input.Position
-        startPos = panel.Position
-    end
-end)
-
-header.InputEnded:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-        dragging = false
-    end
-end)
-
-UIS.InputChanged:Connect(function(input)
-    if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
-        local delta = input.Position - dragStart
-        panel.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
-    end
-end)
-
--- Minimize / Maximize / Close
-miniBtn.MouseButton1Click:Connect(function()
-    panel.Visible = false
-    icon.Visible = true
-end)
-
-icon.MouseButton1Click:Connect(function()
-    panel.Visible = true
-    icon.Visible = false
-end)
-
-closeBtn.MouseButton1Click:Connect(function()
-    panel:Destroy()
-    icon:Destroy()
 end)
