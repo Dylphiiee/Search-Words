@@ -1,113 +1,81 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="id">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Search Word</title>
-
-<style>
-    body {
-        background: #f5f5f5;
-        margin: 0;
-        padding: 40px 10px;
-        font-family: Arial, sans-serif;
-        text-align: center;
-    }
-    .logo {
-        font-size: 42px;
-        font-weight: bold;
-        color: #1a73e8;
-        margin-bottom: 25px;
-    }
-    .search-box {
-        width: 95%;
-        max-width: 600px;
-        margin: 0 auto;
-        background: white;
-        padding: 12px 20px;
-        border-radius: 40px;
-        box-shadow: 0px 3px 10px rgba(0,0,0,0.15);
-    }
-    .search-box input {
-        width: 100%;
-        border: none;
-        outline: none;
-        font-size: 18px;
-    }
-    #results {
-        margin-top: 25px;
-        max-width: 600px;
-        margin-left: auto;
-        margin-right: auto;
-    }
-    .item {
-        background: white;
-        padding: 10px 14px;
-        border-radius: 10px;
-        font-size: 18px;
-        margin-bottom: 10px;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        box-shadow: 0px 2px 6px rgba(0,0,0,0.1);
-    }
-    .copy-btn {
-        padding: 6px 14px;
-        background: #1a73e8;
-        color: white;
-        border: none;
-        cursor: pointer;
-        border-radius: 6px;
-        font-size: 14px;
-    }
-    .copy-btn:active {
-        transform: scale(0.96);
-    }
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Search Words</title>
+    <link rel="stylesheet" href="style.css">
 </head>
-
 <body>
+    <!-- Toggle Mode -->
+    <div class="toggle-container">
+        <button id="toggleMode">🌙</button>
+    </div>
 
-<div class="logo">Search Word</div>
+    <div class="container">
+        <h1 class="title">Search Words</h1>
 
-<div class="search-box">
-    <input id="search" type="text" placeholder="Cari kata..." disabled>
-</div>
+        <input type="text" id="searchInput" placeholder="Search words..." autocomplete="off">
 
-<div id="results"></div>
+        <div id="results"></div>
+    </div>
 
 <script>
-let words = [];
+    let darkMode = false;
 
-// === LOAD words.json ===
-fetch("words.json")
-    .then(r => r.json())
-    .then(data => {
-        words = data.words; // sesuai format JSON kamu
-        document.getElementById("search").disabled = false;
-        console.log("Loaded", words.length, "words from JSON");
-    })
-    .catch(err => {
-        alert("Gagal memuat words.json. Pastikan file berada di server yang sama.");
-        console.error(err);
+    // Toggle Light/Dark Mode
+    document.getElementById("toggleMode").addEventListener("click", () => {
+        darkMode = !darkMode;
+        document.body.classList.toggle("dark");
+        document.getElementById("toggleMode").textContent = darkMode ? "☀️" : "🌙";
     });
 
-// === SEARCH FUNCTION ===
-function searchWords(query, limit = 200) {
-    query = query.toLowerCase();
+    // Load words.json
+    let wordsList = [];
 
-    let starts = [];
-    let contains = [];
+    fetch("words.json")
+        .then(res => res.json())
+        .then(data => {
+            wordsList = data.words;
+        });
 
-    for (let w of words) {
-        let lw = w.toLowerCase();
+    // Search Function
+    const input = document.getElementById("searchInput");
+    const resultsBox = document.getElementById("results");
 
-        if (lw.startsWith(query)) starts.push(w);
-        else if (lw.includes(query)) contains.push(w);
+    input.addEventListener("input", () => {
+        const query = input.value.toLowerCase();
+        resultsBox.innerHTML = "";
 
-        if (starts.length + contains.length >= limit) break;
-    }
+        if (query.length === 0) return;
 
+        const filtered = wordsList.filter(word => word.toLowerCase().startsWith(query));
+
+        filtered.forEach(word => {
+            const item = document.createElement("div");
+            item.className = "result-item";
+
+            item.innerHTML = `
+                <button class="word-btn">${word}</button>
+                <button class="copy-btn" data-word="${word}">Salin</button>
+            `;
+
+            resultsBox.appendChild(item);
+        });
+
+        // Copy function
+        document.querySelectorAll(".copy-btn").forEach(btn => {
+            btn.addEventListener("click", () => {
+                navigator.clipboard.writeText(btn.dataset.word);
+                btn.textContent = "Tersalin!";
+                setTimeout(() => btn.textContent = "Salin", 1000);
+            });
+        });
+    });
+</script>
+
+</body>
+</html>
     return [...starts, ...contains];
 }
 
