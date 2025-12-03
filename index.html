@@ -33,7 +33,6 @@
         padding: 12px 20px;
         border-radius: 40px;
         box-shadow: 0px 3px 10px rgba(255,255,255,0.1);
-        color: white;
     }
     .search-box input {
         width: 100%;
@@ -78,7 +77,7 @@
 <div class="credit">@dylphiiee</div>
 
 <div class="search-box">
-    <input id="search" type="text" placeholder="Cari kata..." disabled>
+    <input id="search" type="text" placeholder="Cari kata..." disabled autocomplete="off">
 </div>
 
 <div id="results"></div>
@@ -90,25 +89,31 @@ let words = [];
 fetch("words.json")
     .then(r => r.json())
     .then(data => {
-        words = data.words;
+        words = data.words || [];
         document.getElementById("search").disabled = false;
-    })
-    .catch(err => {});
+    });
 
-// Search function
+// Normalisasi input (hapus spasi, zero-width, dsb)
+function cleanQuery(q) {
+    return q
+        .replace(/[\u200B-\u200F\uFEFF]/g, "")  // zero-width
+        .replace(/\s+/g, "")                   // whitespace
+        .trim()
+        .toLowerCase();
+}
+
+// Search startsWith ONLY
 function searchWords(query, limit = 200) {
-    query = query.toLowerCase();
-    let starts = [];
-    let contains = [];
+    const q = query.toLowerCase();
+    const result = [];
 
     for (let w of words) {
-        let lw = w.toLowerCase();
-        if (lw.startsWith(query)) starts.push(w);
-        else if (lw.includes(query)) contains.push(w);
-        if (starts.length + contains.length >= limit) break;
+        if (w.toLowerCase().startsWith(q)) {
+            result.push(w);
+            if (result.length >= limit) break;
+        }
     }
-
-    return [...starts, ...contains];
+    return result;
 }
 
 // Copy function
@@ -118,7 +123,7 @@ function copyToClipboard(text) {
 
 // Update list
 document.getElementById("search").addEventListener("input", function() {
-    const query = this.value.trim();
+    const query = cleanQuery(this.value);
     const box = document.getElementById("results");
     box.innerHTML = "";
 
@@ -127,7 +132,10 @@ document.getElementById("search").addEventListener("input", function() {
     const result = searchWords(query);
 
     if (result.length === 0) {
-        box.innerHTML = `<div class="item">Tidak ada hasil</div>`;
+        const div = document.createElement("div");
+        div.className = "item";
+        div.textContent = "Tidak ada hasil";
+        box.appendChild(div);
         return;
     }
 
@@ -135,56 +143,16 @@ document.getElementById("search").addEventListener("input", function() {
         const row = document.createElement("div");
         row.className = "item";
 
-        row.innerHTML = `
-            <span>${word}</span>
-            <button class="copy-btn" onclick="copyToClipboard('${word}')">Copy</button>
-        `;
+        const textNode = document.createElement("span");
+        textNode.textContent = word;
 
-        box.appendChild(row);
-    });
-});
-</script>
+        const btn = document.createElement("button");
+        btn.className = "copy-btn";
+        btn.textContent = "Copy";
+        btn.onclick = () => copyToClipboard(word);
 
-</body>
-</html>}
-
-// === COPY TO CLIPBOARD ===
-function copyToClipboard(text) {
-    navigator.clipboard.writeText(text).then(() => {
-        alert("Copied: " + text);
-    });
-}
-
-// === UPDATE RESULTS ===
-document.getElementById("search").addEventListener("input", function() {
-    const query = this.value.trim();
-    const box = document.getElementById("results");
-    box.innerHTML = "";
-
-    if (!query) return;
-
-    const result = searchWords(query);
-
-    if (result.length === 0) {
-        box.innerHTML = `<div class="item" style="color:#777">Tidak ada hasil</div>`;
-        return;
-    }
-
-    result.forEach(word => {
-        const row = document.createElement("div");
-        row.className = "item";
-
-        const text = document.createElement("span");
-        text.textContent = word;
-
-        const button = document.createElement("button");
-        button.className = "copy-btn";
-        button.textContent = "Copy";
-        button.onclick = () => copyToClipboard(word);
-
-        row.appendChild(text);
-        row.appendChild(button);
-
+        row.appendChild(textNode);
+        row.appendChild(btn);
         box.appendChild(row);
     });
 });
