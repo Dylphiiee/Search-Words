@@ -1,6 +1,6 @@
 -- Load words from JSON
 local Http = game:GetService("HttpService")
-local url = ""
+local url = "https://raw.githubusercontent.com/Dylphiiee/Search-Words/refs/heads/main/words.json"
 local Words = {}
 
 local ok, res = pcall(function()
