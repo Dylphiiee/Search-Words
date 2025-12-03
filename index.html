@@ -1,113 +1,248 @@
 <!doctype html>
 <html lang="id">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Search Word</title>
-  <style>
-    /* Reset */
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    html,body { height: 100%; font-family: Arial, Helvetica, sans-serif; background:#f5f5f5; color:#202124; }
-
-    /* Page center */
-    .page {
-      min-height: 100%;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      flex-direction:column;
-      padding: 40px 20px;
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Search Word</title>
+<style>
+    body {
+        margin: 0;
+        background: #f8f9fa;
+        font-family: Arial, sans-serif;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 40px 10px;
     }
-
-    /* Logo / title */
     .logo {
-      font-size:48px;
-      font-weight:700;
-      letter-spacing: -2px;
-      margin-bottom: 24px;
-      display:flex;
-      align-items:baseline;
-      gap:12px;
+        font-size: 54px;
+        font-weight: bold;
+        margin-bottom: 20px;
+        color: #1a73e8;
     }
-    .logo .title-main { color:#1a73e8; } /* google-like blue */
-    .logo .title-sub { font-size:18px; color:#5f6368; }
-
-    /* Search box */
-    .search-wrap {
-      width: 100%;
-      max-width: 680px;
-      display:flex;
-      align-items:center;
-      background: #fff;
-      border-radius: 24px;
-      padding: 12px 16px;
-      box-shadow: 0 6px 18px rgba(60,64,67,0.15);
+    .search-box {
+        width: 100%;
+        max-width: 600px;
+        background: white;
+        padding: 12px 18px;
+        border-radius: 40px;
+        box-shadow: 0px 3px 12px rgba(0,0,0,0.15);
+        display: flex;
+        align-items: center;
     }
-    .search-wrap svg { width:22px; height:22px; margin-right:10px; opacity:0.7; }
-    input.search {
-      border: none;
-      outline: none;
-      font-size:20px;
-      flex:1;
-      min-width:0;
+    .search-box input {
+        flex: 1;
+        border: none;
+        outline: none;
+        font-size: 18px;
     }
-    button.clear-btn {
-      background:transparent;
-      border:none;
-      cursor:pointer;
-      font-size:16px;
-      color:#5f6368;
-      padding:6px;
-    }
-
-    /* Results */
-    .results {
-      margin-top:14px;
-      width:100%;
-      max-width:680px;
-      background:transparent;
-    }
-    .meta {
-      color:#5f6368;
-      font-size:13px;
-      margin-bottom:8px;
-      padding-left:6px;
-    }
-    .list {
-      background:#fff;
-      border-radius:8px;
-      box-shadow: 0 4px 12px rgba(60,64,67,0.10);
-      max-height:360px;
-      overflow:auto;
-      padding:6px;
+    #results {
+        margin-top: 20px;
+        width: 100%;
+        max-width: 600px;
     }
     .item {
-      padding:10px 12px;
-      border-radius:6px;
-      cursor:pointer;
-      display:flex;
-      align-items:center;
-      gap:10px;
-      font-size:16px;
+        background: white;
+        padding: 12px 16px;
+        margin-bottom: 8px;
+        border-radius: 10px;
+        font-size: 18px;
+        box-shadow: 0px 2px 6px rgba(0,0,0,0.1);
     }
-    .item:hover, .item.active {
-      background: #f1f3f4;
-    }
-    .highlight {
-      background: linear-gradient(90deg, #fff59d 0%, #ffe082 100%);
-      border-radius:3px;
-      padding:0 2px;
+</style>
+</head>
+<body>
+
+<div class="logo">Search Word</div>
+
+<div class="search-box">
+    <input id="search" type="text" placeholder="Cari kata..." disabled>
+</div>
+
+<div id="results"></div>
+
+<script>
+// DATA KATA AKAN DITARIK DARI SERVER
+let words = [];
+
+// AMBIL words.txt
+fetch("words.txt")
+    .then(r => r.text())
+    .then(t => {
+        words = t.split(/\r?\n/).map(s => s.trim()).filter(Boolean);
+        document.getElementById("search").disabled = false;
+        console.log("Loaded", words.length, "words");
+    })
+    .catch(err => {
+        alert("Gagal memuat words.txt. Pastikan file berada di server yang sama.");
+        console.error(err);
+    });
+
+// FUNGSI PENCARIAN
+function searchWords(q, limit = 200) {
+    q = q.toLowerCase();
+    let starts = [];
+    let contains = [];
+
+    for (let w of words) {
+        let lw = w.toLowerCase();
+        if (lw.startsWith(q)) starts.push(w);
+        else if (lw.includes(q)) contains.push(w);
+
+        if (starts.length + contains.length >= limit) break;
     }
 
-    /* Footer hint */
-    .hint {
-      margin-top:18px;
-      color:#70757a;
-      font-size:13px;
+    return [...starts, ...contains];
+}
+
+// UPDATE UI HASIL
+document.getElementById("search").addEventListener("input", function () {
+    let q = this.value.trim();
+    let resBox = document.getElementById("results");
+    resBox.innerHTML = "";
+
+    if (!q) return;
+
+    let result = searchWords(q);
+
+    if (result.length === 0) {
+        resBox.innerHTML = `<div class="item" style="color:#777">No result</div>`;
+        return;
     }
 
-    /* Responsive */
-    @media (max-width:420px) {
+    result.forEach(w => {
+        let div = document.createElement("div");
+        div.className = "item";
+        div.textContent = w;
+        resBox.appendChild(div);
+    });
+});
+</script>
+
+</body>
+</html><!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Search Word</title>
+<style>
+    body {
+        margin: 0;
+        background: #f8f9fa;
+        font-family: Arial, sans-serif;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 40px 10px;
+    }
+    .logo {
+        font-size: 54px;
+        font-weight: bold;
+        margin-bottom: 20px;
+        color: #1a73e8;
+    }
+    .search-box {
+        width: 100%;
+        max-width: 600px;
+        background: white;
+        padding: 12px 18px;
+        border-radius: 40px;
+        box-shadow: 0px 3px 12px rgba(0,0,0,0.15);
+        display: flex;
+        align-items: center;
+    }
+    .search-box input {
+        flex: 1;
+        border: none;
+        outline: none;
+        font-size: 18px;
+    }
+    #results {
+        margin-top: 20px;
+        width: 100%;
+        max-width: 600px;
+    }
+    .item {
+        background: white;
+        padding: 12px 16px;
+        margin-bottom: 8px;
+        border-radius: 10px;
+        font-size: 18px;
+        box-shadow: 0px 2px 6px rgba(0,0,0,0.1);
+    }
+</style>
+</head>
+<body>
+
+<div class="logo">Search Word</div>
+
+<div class="search-box">
+    <input id="search" type="text" placeholder="Cari kata..." disabled>
+</div>
+
+<div id="results"></div>
+
+<script>
+// DATA KATA AKAN DITARIK DARI SERVER
+let words = [];
+
+// AMBIL words.txt
+fetch("words.txt")
+    .then(r => r.text())
+    .then(t => {
+        words = t.split(/\r?\n/).map(s => s.trim()).filter(Boolean);
+        document.getElementById("search").disabled = false;
+        console.log("Loaded", words.length, "words");
+    })
+    .catch(err => {
+        alert("Gagal memuat words.txt. Pastikan file berada di server yang sama.");
+        console.error(err);
+    });
+
+// FUNGSI PENCARIAN
+function searchWords(q, limit = 200) {
+    q = q.toLowerCase();
+    let starts = [];
+    let contains = [];
+
+    for (let w of words) {
+        let lw = w.toLowerCase();
+        if (lw.startsWith(q)) starts.push(w);
+        else if (lw.includes(q)) contains.push(w);
+
+        if (starts.length + contains.length >= limit) break;
+    }
+
+    return [...starts, ...contains];
+}
+
+// UPDATE UI HASIL
+document.getElementById("search").addEventListener("input", function () {
+    let q = this.value.trim();
+    let resBox = document.getElementById("results");
+    resBox.innerHTML = "";
+
+    if (!q) return;
+
+    let result = searchWords(q);
+
+    if (result.length === 0) {
+        resBox.innerHTML = `<div class="item" style="color:#777">No result</div>`;
+        return;
+    }
+
+    result.forEach(w => {
+        let div = document.createElement("div");
+        div.className = "item";
+        div.textContent = w;
+        resBox.appendChild(div);
+    });
+});
+</script>
+
+</body>
+</html>    @media (max-width:420px) {
       .logo { font-size:36px; }
       input.search { font-size:18px; }
     }
