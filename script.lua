@@ -1,25 +1,35 @@
--- Load words from JSON
+-- ======= Services =======
+local Players = game:GetService("Players")
 local Http = game:GetService("HttpService")
-local url = "https://raw.githubusercontent.com/Dylphiiee/Search-Words/refs/heads/main/words.json"
-local Words = {}
+local UIS = game:GetService("UserInputService")
+local player = Players.LocalPlayer
 
-local ok, res = pcall(function()
-    return Http:GetAsync(url)
+-- ======= Load Words from RAW script.lua =======
+local Words = {}
+local success, res = pcall(function()
+    return Http:GetAsync("https://raw.githubusercontent.com/Dylphiiee/Search-Words/refs/heads/main/script.lua")
 end)
 
-if ok and res then
-    local data = Http:JSONDecode(res)
-    Words = data.words or {}
+if success and res then
+    -- Eksekusi script.lua untuk mendapatkan words
+    local env = {}
+    setfenv(loadstring(res), env)()
+    if env.words then
+        Words = env.words
+    else
+        warn("Tidak menemukan variabel 'words' di script.lua")
+    end
 else
-    warn("Gagal load JSON:", res)
+    warn("Gagal load script.lua:", res)
 end
 
--- Search function like HTML (case-insensitive, startsWith)
+-- ======= Search Function =======
 local function searchWords(query, limit)
-    query = query:lower()
+    query = query:lower():gsub("^%s*(.-)%s*$","%1")
     local result = {}
     for _, w in ipairs(Words) do
-        if w:sub(1,#query):lower() == query then
+        local word = w:lower():gsub("^%s*(.-)%s*$","%1")
+        if word:sub(1,#query) == query then
             table.insert(result, w)
             if limit and #result >= limit then break end
         end
@@ -27,26 +37,24 @@ local function searchWords(query, limit)
     return result
 end
 
--- GUI setup
-local player = game.Players.LocalPlayer
+-- ======= GUI =======
 local gui = Instance.new("ScreenGui", player:WaitForChild("PlayerGui"))
 gui.Name = "SearchWordsGUI"
 
+-- Panel
 local panel = Instance.new("Frame", gui)
 panel.Size = UDim2.new(0, 300, 0, 400)
 panel.Position = UDim2.new(0.5, -150, 0.5, -200)
 panel.BackgroundColor3 = Color3.fromRGB(35,35,35)
 panel.Active = true
 panel.BorderSizePixel = 0
-local UICorner = Instance.new("UICorner", panel)
-UICorner.CornerRadius = UDim.new(0,8)
+Instance.new("UICorner", panel).CornerRadius = UDim.new(0,8)
 
 -- Header
 local header = Instance.new("Frame", panel)
 header.Size = UDim2.new(1,0,0,30)
 header.BackgroundColor3 = Color3.fromRGB(25,25,25)
-local UICorner2 = Instance.new("UICorner", header)
-UICorner2.CornerRadius = UDim.new(0,8)
+Instance.new("UICorner", header).CornerRadius = UDim.new(0,8)
 
 local title = Instance.new("TextLabel", header)
 title.Size = UDim2.new(1,-60,1,0)
@@ -58,6 +66,7 @@ title.Font = Enum.Font.GothamBold
 title.TextSize = 14
 title.TextXAlignment = Enum.TextXAlignment.Left
 
+-- Close & Minimize
 local closeBtn = Instance.new("TextButton", header)
 closeBtn.Size = UDim2.new(0,25,0,25)
 closeBtn.Position = UDim2.new(1,-30,0,2)
@@ -99,7 +108,7 @@ search.TextSize = 13
 search.ClearTextOnFocus = false
 Instance.new("UICorner", search).CornerRadius = UDim.new(0,4)
 
--- Results
+-- Results list
 local list = Instance.new("ScrollingFrame", panel)
 list.Size = UDim2.new(1,-20,0,330)
 list.Position = UDim2.new(0,10,0,65)
@@ -108,6 +117,84 @@ list.ScrollBarThickness = 6
 list.AutomaticCanvasSize = Enum.AutomaticSize.Y
 
 local layout = Instance.new("UIListLayout", list)
+layout.Padding = UDim.new(0,2)
+layout.SortOrder = Enum.SortOrder.LayoutOrder
+
+-- ======= Update Results =======
+local function UpdateResults()
+    for _, c in ipairs(list:GetChildren()) do
+        if c:IsA("TextButton") then c:Destroy() end
+    end
+    local query = search.Text:lower():gsub("^%s*(.-)%s*$","%1")
+    if #query < 1 then return end
+    local results = searchWords(query,200)
+    if #results == 0 then
+        local none = Instance.new("TextLabel", list)
+        none.Size = UDim2.new(1,0,0,25)
+        none.BackgroundColor3 = Color3.fromRGB(50,50,50)
+        none.Text = "Tidak ada hasil"
+        none.TextColor3 = Color3.fromRGB(255,255,255)
+        none.Font = Enum.Font.Gotham
+        none.TextSize = 12
+        Instance.new("UICorner", none).CornerRadius = UDim.new(0,4)
+        return
+    end
+    for _, w in ipairs(results) do
+        local btn = Instance.new("TextButton", list)
+        btn.Size = UDim2.new(1,0,0,25)
+        btn.BackgroundColor3 = Color3.fromRGB(50,50,50)
+        btn.TextColor3 = Color3.fromRGB(255,255,255)
+        btn.Font = Enum.Font.Gotham
+        btn.TextSize = 12
+        btn.Text = w
+        btn.AutoButtonColor = true
+        Instance.new("UICorner", btn).CornerRadius = UDim.new(0,4)
+        btn.MouseButton1Click:Connect(function()
+            search.Text = w
+            pcall(function() setclipboard(w) end)
+        end)
+    end
+end
+
+search:GetPropertyChangedSignal("Text"):Connect(UpdateResults)
+
+-- ======= Dragging =======
+local dragging, dragStart, startPos
+header.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = true
+        dragStart = input.Position
+        startPos = panel.Position
+    end
+end)
+
+header.InputChanged:Connect(function(input)
+    if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+        local delta = input.Position - dragStart
+        panel.Position = startPos + UDim2.new(0, delta.X, 0, delta.Y)
+    end
+end)
+
+header.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = false
+    end
+end)
+
+-- ======= Minimize / Maximize / Close =======
+miniBtn.MouseButton1Click:Connect(function()
+    panel.Visible = false
+    icon.Visible = true
+end)
+
+icon.MouseButton1Click:Connect(function()
+    panel.Visible = true
+    icon.Visible = false
+end)
+
+closeBtn.MouseButton1Click:Connect(function()
+    gui:Destroy()
+end)local layout = Instance.new("UIListLayout", list)
 layout.Padding = UDim.new(0,2)
 layout.SortOrder = Enum.SortOrder.LayoutOrder
 
