@@ -93,21 +93,76 @@ fetch("words.json")
         document.getElementById("search").disabled = false;
     });
 
-// Normalisasi input (hapus spasi, zero-width, dsb)
+// Normalisasi input
 function cleanQuery(q) {
     return q
-        .replace(/[\u200B-\u200F\uFEFF]/g, "")  // zero-width
-        .replace(/\s+/g, "")                   // whitespace
+        .replace(/[\u200B-\u200F\uFEFF]/g, "")
+        .replace(/\s+/g, "")
         .trim()
         .toLowerCase();
 }
 
-// Search startsWith ONLY
+// Search startsWith only, case-insensitive
 function searchWords(query, limit = 200) {
     const q = query.toLowerCase();
     const result = [];
 
-    for (let w of words) {
+    for (let word of words) {
+        if (word.toLowerCase().startsWith(q)) {
+            result.push(word);
+            if (result.length >= limit) break;
+        }
+    }
+
+    return result;
+}
+
+// Copy function
+function copyToClipboard(text) {
+    navigator.clipboard.writeText(text);
+}
+
+// Update the result list
+document.getElementById("search").addEventListener("input", function() {
+    const query = cleanQuery(this.value);
+    const box = document.getElementById("results");
+
+    // Clear existing results
+    box.innerHTML = "";
+
+    if (!query) return;
+
+    const result = searchWords(query);
+
+    if (result.length === 0) {
+        const nores = document.createElement("div");
+        nores.className = "item";
+        nores.textContent = "Tidak ada hasil";
+        box.appendChild(nores);
+        return;
+    }
+
+    result.forEach(word => {
+        const row = document.createElement("div");
+        row.className = "item";
+
+        const textNode = document.createElement("span");
+        textNode.textContent = word;
+
+        const btn = document.createElement("button");
+        btn.className = "copy-btn";
+        btn.textContent = "Copy";
+        btn.onclick = () => copyToClipboard(word);
+
+        row.appendChild(textNode);
+        row.appendChild(btn);
+        box.appendChild(row);
+    });
+});
+</script>
+
+</body>
+</html>    for (let w of words) {
         if (w.toLowerCase().startsWith(q)) {
             result.push(w);
             if (result.length >= limit) break;
